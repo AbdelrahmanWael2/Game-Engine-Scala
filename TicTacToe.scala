@@ -4,8 +4,8 @@ object TicTacToe {
   }
 
 
-  def TicTacToeController(state: Array[Array[Int]], input: String): Boolean = {
-    println("IN COONTROLELR")
-    return true
+  def TicTacToeController(state: Array[Array[Int]], pair: (String, Int)): (Boolean, Int) = {
+    val (input, turn) = pair
+    return (true, turn)
   }
 }
