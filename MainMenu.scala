@@ -98,16 +98,16 @@ object MainMenu {
     //    SudokoButton.addActionListener(sudokoListener)
   }
 
-  def AbstractGameEngine(Controller: (Array[Array[Int]], String) => Boolean,
+  def AbstractGameEngine(Controller: (Array[Array[Int]], (String, Int)) => (Boolean,Int),
                          Drawer: Array[Array[Int]] => Unit): Unit = {
 
-
+    val turn = 0
     val state = Array.ofDim[Int](3, 3)
     while (true) {
       //input from terminal
       val input = scala.io.StdIn.readLine()
-      println(input)
-      Controller(state, input)
+      val pair = (input, turn)
+      Controller(state, pair)
       Drawer(state)
     }
 
