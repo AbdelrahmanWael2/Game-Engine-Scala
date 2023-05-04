@@ -3,7 +3,8 @@ import java.awt.event.{ActionEvent, ActionListener}
 import javax.swing._
 import TicTacToe.TicTacToeDrawer
 import TicTacToe.TicTacToeController
-
+import TicTacToe.ConnectControler
+import TicTacToe.ConnectDrawer
 
 object MainMenu {
 
@@ -15,7 +16,7 @@ object MainMenu {
     val frame = new JFrame()
     frame.setVisible(true)
 
-    //rows, columns, h gap, v gap
+    // rows, columns, h gap, v gap
     var gridLayout = new GridLayout(10, 10, 10, 10)
     val mainPanel = new JPanel(gridLayout)
     val TicButton = new JButton("Tic-Tac-Toe")
@@ -24,7 +25,6 @@ object MainMenu {
     val ChessButton = new JButton("Chess")
     val SudokoButton = new JButton("Sudoku")
     val QueensButton = new JButton("8-Queens")
-
 
     mainPanel setBorder BorderFactory.createEmptyBorder(10, 10, 10, 10)
     mainPanel add TicButton;
@@ -49,16 +49,11 @@ object MainMenu {
       }
     }
 
-    //    val connectListener: ActionListener = new ActionListener {
-    //      def actionPerformed(e: ActionEvent): Unit = {
-    //        new Game(
-    //          "connect 4",
-    //          connect.controller,
-    //          connect.draw
-    //        )
-    //        setVisible(false)
-    //      }
-    //    }
+    val connectListener: ActionListener = new ActionListener {
+      def actionPerformed(e: ActionEvent): Unit = {
+        AbstractGameEngine(ConnectControler, ConnectDrawer)
+      }
+    }
     //
     //    val queensListener: ActionListener = new ActionListener {
     //      def actionPerformed(e: ActionEvent): Unit = {
@@ -92,31 +87,32 @@ object MainMenu {
     //    }
 
     TicButton.addActionListener(ticListener)
-    //    ConnectButton.addActionListener(connectListener)
+    ConnectButton.addActionListener(connectListener)
     //    QueensButton.addActionListener(queensListener)
     //    ChessButton.addActionListener(chessListener)
     //    SudokoButton.addActionListener(sudokoListener)
   }
 
-  def AbstractGameEngine(Controller: (Array[Array[Int]], (String, Int)) => (Boolean,Int),
-                         Drawer: Array[Array[Int]] => Unit): Unit = {
+  def AbstractGameEngine(
+      Controller: (
+          Array[Array[Int]],
+          (String, Int)
+      ) => (Boolean, Array[Array[Int]]),
+      Drawer: Array[Array[Int]] => Unit
+  ): Unit = {
 
-    val turn = 0
-    val state = Array.ofDim[Int](3, 3)
+    var turn = 0
+    var state = Array.ofDim[Int](3, 3)
     while (true) {
-      //input from terminal
-      val input = scala.io.StdIn.readLine()
-      val pair = (input, turn)
-      Controller(state, pair)
-      Drawer(state)
+      // input from terminal
+      var input = scala.io.StdIn.readLine()
+      var pair = (input, turn)
+      var (isValid, newState) = Controller(state, pair)
+      state = newState
+      if (isValid) {
+        Drawer(state)
+        turn = 1 - turn
+      }
     }
-
-
   }
-
-
-
-
 }
-
-
