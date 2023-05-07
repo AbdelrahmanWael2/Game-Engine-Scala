@@ -1,3 +1,5 @@
+import Chess.{ChessController, ChessDrawer}
+
 import java.awt.{BorderLayout, Dimension, GridLayout}
 import java.awt.event.{ActionEvent, ActionListener}
 import javax.swing._
@@ -67,16 +69,11 @@ object MainMenu {
         AbstractGameEngine(QueensController, QueensDrawer)
       }
     }
-    //    val chessListener: ActionListener = new ActionListener {
-    //      def actionPerformed(e: ActionEvent): Unit = {
-    //        new Game(
-    //          "chess",
-    //          Chess.controller,
-    //          Chess.draw
-    //        )
-    //        setVisible(false)
-    //      }
-    //    }
+val chessListener: ActionListener = new ActionListener {
+  def actionPerformed(e: ActionEvent): Unit = {
+    AbstractGameEngine(ChessController, ChessDrawer)
+  }
+}
     //    val sudokoListener: ActionListener = new ActionListener {
     //      def actionPerformed(e: ActionEvent): Unit = {
     //        new Game(
@@ -91,17 +88,17 @@ object MainMenu {
     TicButton.addActionListener(ticListener)
     ConnectButton.addActionListener(connectListener)
     QueensButton.addActionListener(queensListener)
-    //    ChessButton.addActionListener(chessListener)
+        ChessButton.addActionListener(chessListener)
     //    SudokoButton.addActionListener(sudokoListener)
   }
 
   def AbstractGameEngine(
-      Controller: (
-          ArrayBuffer[Int],
-          (String, Int)
-      ) => (Boolean, ArrayBuffer[Int]),
-      Drawer: ArrayBuffer[Int] => Unit
-  ): Unit = {
+                          Controller: (
+                            ArrayBuffer[Int],
+                              (String, Int)
+                            ) => (Boolean, ArrayBuffer[Int]),
+                          Drawer: ArrayBuffer[Int] => Unit
+                        ): Unit = {
 
     var turn = 0
     var state = ArrayBuffer.fill(9)(0)
