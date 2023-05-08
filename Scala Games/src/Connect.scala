@@ -11,56 +11,50 @@ import java.awt.{
 import java.io.File
 import javax.imageio.ImageIO
 import javax.swing.{BorderFactory, ImageIcon, JButton, JFrame, JPanel}
-import scala.collection.mutable.ArrayBuffer
 import javax.swing.{JFrame, JPanel, JButton, JLabel, ImageIcon, BorderFactory}
 
 object Connect {
+  def ConnectInit(): Array[Int] = {
+    return Array.fill(42)(0)
+  }
   def ConnectControler(
-      state: ArrayBuffer[Int],
+      state: Array[Int],
       pair: (String, Int)
-  ): (Boolean, ArrayBuffer[Int]) = {
-    var tempState = ArrayBuffer.fill(42)(0)
-    if (state.length != 9) {
-      tempState = state
-    }
+  ): (Boolean, Array[Int], Int) = {
     val (input, turn) = pair
     val columns = Array('a', 'b', 'c', 'd', 'e', 'f', 'g')
     if (
       !(columns.contains(input(1))) || !input(0).isDigit || !(input.length == 2)
     )
-      return (false, tempState)
+      return (false, state, turn)
 
     val x = input.substring(0, 1).toInt - 1
     val y = columns.indexOf(input(1), 0)
 
     if (x > 5 || y > 6)
-      return (false, tempState)
-    if (!(tempState(x * 6 + y) == 0))
-      return (false, tempState)
-    if ((x != 0) && (tempState((x - 1) * 6 + y)) == 0)
-      return (false, tempState)
+      return (false, state, turn)
+    if (!(state(x * 6 + y) == 0))
+      return (false, state, turn)
+    if ((x != 0) && (state((x - 1) * 6 + y)) == 0)
+      return (false, state, turn)
 
     if (turn % 2 == 0) {
-      tempState(x * 7 + y) = 1
+      state(x * 7 + y) = 1
     } else {
-      tempState(x * 7 + y) = 2
+      state(x * 7 + y) = 2
     }
-    return (true, tempState)
+    var newturn = turn + 1;
+    return (true, state, newturn)
   }
 
-  def ConnectDrawer(state: ArrayBuffer[Int]): Unit = {
-    var tempState = ArrayBuffer.fill(42)(0)
-    if (state.length != 9) {
-      tempState = state
-    }
-
+  def ConnectDrawer(state: Array[Int]): Unit = {
     val frame = new JFrame("Connect 4")
     frame.setSize(800, 600)
 
     val panel = new JPanel() {
       override def paint(gfx: Graphics) {
         super.paintComponent(gfx)
-        drawBoard(gfx, tempState)
+        drawBoard(gfx, state)
 
       }
     }
@@ -69,7 +63,7 @@ object Connect {
     frame.setVisible(true)
   }
 
-  def drawBoard(gfx: Graphics, state: ArrayBuffer[Int]) {
+  def drawBoard(gfx: Graphics, state: Array[Int]) {
     val backGroundColor = new Color(51, 153, 255)
     val initCircleColor = new Color(255, 255, 255)
     val redColor = new Color(255, 0, 0)
