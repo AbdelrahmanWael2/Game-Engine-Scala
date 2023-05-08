@@ -1,14 +1,22 @@
 import Chess.{ChessController, ChessDrawer, ChessInit}
 import Sudoko.{SudokoController, SudokoDrawer, SudokoInit}
 
-import java.awt.{BorderLayout, Color, Dimension, GridBagConstraints, GridBagLayout, GridLayout}
+import java.awt.{
+  BorderLayout,
+  Color,
+  Dimension,
+  GridBagConstraints,
+  GridBagLayout,
+  GridLayout
+}
 import java.awt.event.{ActionEvent, ActionListener}
 import javax.swing._
 import TicTacToe.{TicTacToeController, TicTacToeDrawer, TicTacToeInit}
-//import Connect.ConnectControler
-//import Connect.ConnectDrawer
-//import Queens.QueensController
-//import Queens.QueensDrawer
+import Connect.ConnectDrawer
+import Queens.QueensController
+import Queens.QueensDrawer
+import Checkers.CheckersDrawer
+import Checkers.CheckersController
 import sun.security.krb5.KrbException
 import sun.security.krb5.KrbException.errorMessage
 
@@ -33,7 +41,6 @@ object MainMenu {
 
     // Create a panel for the buttons and set its layout
     val buttonPanel = new JPanel(new GridBagLayout())
-
 
     // Create the buttons and set their properties
     val TicButton = new JButton("Tic-Tac-Toe")
@@ -77,7 +84,9 @@ object MainMenu {
     centerPanel.add(buttonPanel, BorderLayout.CENTER)
 
     // Load the background image and set it as the content pane
-    val backgroundImage = new ImageIcon("src/Assets/Chess/138004-chess_pieces_on_wooden_table_during_sunset-3840x2160.jpg")
+    val backgroundImage = new ImageIcon(
+      "src/Assets/Chess/138004-chess_pieces_on_wooden_table_during_sunset-3840x2160.jpg"
+    )
     val backgroundPanel = new JPanel(new BorderLayout())
     backgroundPanel.add(new JLabel(backgroundImage), BorderLayout.CENTER)
     backgroundPanel.add(centerPanel, BorderLayout.CENTER)
@@ -99,40 +108,47 @@ object MainMenu {
       }
     }
 
-//    val connectListener: ActionListener = new ActionListener {
-//      def actionPerformed(e: ActionEvent): Unit = {
-//        AbstractGameEngine(ConnectControler, ConnectDrawer)
-//      }
-//    }
-    //
-//    val queensListener: ActionListener = new ActionListener {
-//      def actionPerformed(e: ActionEvent): Unit = {
-//        AbstractGameEngine(QueensController, QueensDrawer)
-//      }
-//    }
-val chessListener: ActionListener = new ActionListener {
-  def actionPerformed(e: ActionEvent): Unit = {
-    AbstractGameEngine(ChessController, ChessDrawer, ChessInit)
-  }
-}
-        val sudokoListener: ActionListener = new ActionListener {
-          def actionPerformed(e: ActionEvent): Unit = {
-            AbstractGameEngine(SudokoController, SudokoDrawer, SudokoInit)
-          }
-        }
+    val connectListener: ActionListener = new ActionListener {
+      def actionPerformed(e: ActionEvent): Unit = {
+        AbstractGameEngine(ConnectControler, ConnectDrawer)
+      }
+    }
+
+    val queensListener: ActionListener = new ActionListener {
+      def actionPerformed(e: ActionEvent): Unit = {
+        AbstractGameEngine(QueensController, QueensDrawer)
+      }
+    }
+
+    val checkersListener: ActionListener = new ActionListener {
+      def actionPerformed(e: ActionEvent): Unit = {
+        AbstractGameEngine(CheckersController, CheckersDrawer)
+      }
+    }
+    val chessListener: ActionListener = new ActionListener {
+      def actionPerformed(e: ActionEvent): Unit = {
+        AbstractGameEngine(ChessController, ChessDrawer, ChessInit)
+      }
+    }
+    val sudokoListener: ActionListener = new ActionListener {
+      def actionPerformed(e: ActionEvent): Unit = {
+        AbstractGameEngine(SudokoController, SudokoDrawer, SudokoInit)
+      }
+    }
 
     TicButton.addActionListener(ticListener)
-//    ConnectButton.addActionListener(connectListener)
-//    QueensButton.addActionListener(queensListener)
-        ChessButton.addActionListener(chessListener)
-        SudokoButton.addActionListener(sudokoListener)
+   ConnectButton.addActionListener(connectListener)
+   QueensButton.addActionListener(queensListener)
+    ChessButton.addActionListener(chessListener)
+    SudokoButton.addActionListener(sudokoListener)
+    CheckersButton.addActionListener(checkersListener)
   }
 
   def AbstractGameEngine(
-                          Controller: (Array[Int], (String, Int) )=> (Boolean, Array[Int]),
-                          Drawer: Array[Int] => Unit,
-                          Init: () => Array[Int])
-                        : Unit = {
+      Controller: (Array[Int], (String, Int)) => (Boolean, Array[Int], Int),
+      Drawer: Array[Int] => Unit,
+      Init: () => Array[Int]
+  ): Unit = {
 
     var turn = 0
     var state = Init()
@@ -158,7 +174,7 @@ val chessListener: ActionListener = new ActionListener {
       submitButton.addActionListener(new ActionListener() {
         def actionPerformed(e: ActionEvent): Unit = {
           var input = ""
-          val (valid, newState) =
+          val (valid, newState, newTurn) =
             Controller(state, (inputField.getText(), turn))
           if (!valid) {
             println("INVALID MOVE")
@@ -168,7 +184,7 @@ val chessListener: ActionListener = new ActionListener {
             println("VALID MOVE")
             Drawer(newState)
             state = newState
-            turn = turn + 1
+            turn = newTurn
           }
           frame.dispose()
           createInputWindow()
