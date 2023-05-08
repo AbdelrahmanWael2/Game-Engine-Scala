@@ -9,8 +9,13 @@ import javax.swing.{JFrame, JPanel, JButton, JLabel, ImageIcon, BorderFactory}
 object TicTacToe {
 
 
+  def TicTacToeInit(): Array[Int] ={
+    val Board = Array.fill(9)(0)
+    Board
+  }
 
-  def TicTacToeDrawer(state: ArrayBuffer[Int]): Unit = {
+
+  def TicTacToeDrawer(state: Array[Int]): Unit = {
     val XSymbol: Image =
       ImageIO.read(new File("src/Assets/TicTacToe/x.png"))
         .getScaledInstance(140, 140, Image.SCALE_SMOOTH)
@@ -70,7 +75,8 @@ object TicTacToe {
 
 
 
-  def TicTacToeController(state: ArrayBuffer[Int], pair: (String, Int)): (Boolean, ArrayBuffer[Int]) = {
+
+  def TicTacToeController(state: Array[Int], pair: (String, Int)): (Boolean, Array[Int]) = {
     var (input, turn) = pair
     val parts = input.split("")
     val num = parts(0).toInt
