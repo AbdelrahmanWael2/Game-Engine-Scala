@@ -202,9 +202,12 @@ object Chess {
     }
 
     val piece = tempstate(startRow * 8 + startCol)
+    
 
-    if (piece == 0 || (piece > 0 && turn == -1) || (piece < 0 && turn == 1)) // Check if the starting position contains a piece of the correct color
+    if ((turn % 2 == 0 && piece < 0) || (turn % 2 == 1 && piece > 0)) { // Check if the starting position contains a piece of the correct color
+      println("Not ur turn")
       return (false, tempstate)
+    }
 
     val validMoves = getValidMoves(tempstate, startRow, startCol)
 
@@ -215,7 +218,6 @@ object Chess {
 
     (true, tempstate)
   }
-
 
   def getValidMoves(tempstate: ArrayBuffer[Int], row: Int, col: Int): Set[(Int, Int)] = {
     val piece = tempstate(row * 8 + col)
@@ -399,5 +401,4 @@ object Chess {
 
 
 }
-
 
