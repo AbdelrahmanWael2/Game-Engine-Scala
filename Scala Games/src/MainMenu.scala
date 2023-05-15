@@ -3,12 +3,11 @@ import java.awt.{BorderLayout, Color, Dimension, Font, Graphics, GridLayout, Ima
 import java.io.File
 import javax.imageio.ImageIO
 import javax.swing.{BorderFactory, ImageIcon, JButton, JFrame, JPanel}
-
 import javax.swing.{BorderFactory, ImageIcon, JButton, JFrame, JLabel, JPanel}
 import java.awt.{BorderLayout, Color, Dimension, GridBagConstraints, GridBagLayout, GridLayout}
 import java.awt.event.{ActionEvent, ActionListener}
 import javax.swing._
-
+import scala.math.abs
 import scala.util.Random
 
 object MainMenu {
@@ -132,11 +131,10 @@ object MainMenu {
     CheckersButton.addActionListener(checkersListener)
   }
 
-  def AbstractGameEngine(
-                          Controller: (Array[Int], (String, Int)) => (Boolean, Array[Int], Int),
-                          Drawer: Array[Int] => Unit,
-                          Init: () => Array[Int]
-                        ): Unit = {
+  def AbstractGameEngine(Controller: (Array[Int], (String, Int)) => (Boolean, Array[Int], Int),
+                         Drawer: Array[Int] => Unit,
+                         Init: () => Array[Int] ): Unit = {
+
 
     var turn = 0
     var state = Init()
@@ -296,7 +294,7 @@ object MainMenu {
   ////////////////Connect 4
 
   def ConnectInit(): Array[Int] = {
-     Array.fill(42)(0)
+    Array.fill(42)(0)
   }
 
   def ConnectControler(state: Array[Int], pair: (String, Int)): (Boolean, Array[Int], Int) = {
@@ -325,7 +323,7 @@ object MainMenu {
     var newturn = turn + 1;
     return (true, state, newturn)
   }
-                        
+
 
   def ConnectDrawer(state: Array[Int]): Unit = {
     val frame = new JFrame("Connect 4")
@@ -632,7 +630,7 @@ object MainMenu {
     frame.setVisible(true)
   }
 
-   def drawBoard(gfx: Graphics, state: Array[Int]) {
+  def drawBoard(gfx: Graphics, state: Array[Int]) {
     val writeColor = new Color(0, 0, 0)
     val black = new Color(128, 128, 128)
     val white = new Color(255, 255, 255)
@@ -1090,7 +1088,7 @@ object MainMenu {
       button.setFocusable(false)
 
       if (state(i) != 0) {
-        button.setText(state(i).toString)
+        button.setText(abs(state(i)).toString)
       }
 
 
@@ -1147,11 +1145,24 @@ object MainMenu {
     val parts = input.split("")
     val num = parts(0).toInt
     val alpha = parts(1).charAt(0)
-    val toInsert = parts(2).toInt
+    var toInsert = 0
+    if(parts(2).charAt(0) == 'x'){
+       toInsert = 120;
+    }else{
+      toInsert = parts(2).toInt
+    }
+
+
+      if((toInsert > 9 && toInsert != 120) || toInsert < 1){
+       return (false, state, turn)
+    }
+
+
+
 
 
     val columns = Array('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i')
-    if (!(columns.contains(alpha)) || num < 1 || num > 9 || !(input.length == 3) || toInsert < 1 || toInsert > 9) {
+    if (!(columns.contains(alpha)) || num < 1 || num > 9 || !(input.length == 3)) {
       println("Invalid Input")
       return (false, state, turn)
     }
@@ -1170,16 +1181,26 @@ object MainMenu {
         return (false, state, turn)
       }
     }
-
-    // check if the number is already present in the same 3x3 box
-    for (i <- 0 until 3; j <- 0 until 3) {
-      val index = boxStartIndex + i * 9 + j
-      if (state(index) == toInsert) {
-        println("Invalid Move: Number already present in the same 3x3 box")
+    val index = row * 9 + col
+    if(toInsert == 120){
+      if(state(index) < 0){
+        println("Cannot delete this number")
         return (false, state, turn)
+      }else{
+        state(index) = 0
+        return (true, state, turn)
       }
     }
-    val index = row * 9 + col
+
+    // check if the number is already present in the same 3x3 box
+//    for (i <- 0 until 3; j <- 0 until 3) {
+//      val index = boxStartIndex + i * 9 + j
+//      if (state(index) == toInsert) {
+//        println("Invalid Move: Number already present in the same 3x3 box")
+//        return (false, state, turn)
+//      }
+//    }
+
     state(index) = toInsert
 
 
@@ -1190,7 +1211,10 @@ object MainMenu {
   def generateSudoku(): Array[Int] = {
     val board = Array.fill(81)(0)
     generateSudokuHelper(board, 0)
-    removeNumbers(board, 0.1) // remove 50% of the numbers
+    removeNumbers(board, 0.4)
+    for(i <- 0 until 80){
+      board(i) = board(i) * - 1
+    }// remove 50% of the numbers
     board
   }
 
@@ -1288,7 +1312,7 @@ object MainMenu {
     frame.setVisible(true)
   }
 
-   def queenDrawBoard(gfx: Graphics, state: Array[Int]): Unit = {
+  def queenDrawBoard(gfx: Graphics, state: Array[Int]): Unit = {
     val writeColor = new Color(0, 0, 0)
     val black = new Color(128, 128, 128)
     val white = new Color(255, 255, 255)
