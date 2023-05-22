@@ -1,14 +1,13 @@
-
-import java.awt.{BorderLayout, Color, Dimension, Font, Graphics, GridLayout, Image, Panel}
+import java.awt.{BorderLayout, Color, Dimension, FlowLayout, Font, Graphics, GridBagConstraints, GridBagLayout, GridLayout, Image, Panel}
 import java.io.File
 import javax.imageio.ImageIO
 import javax.swing.{BorderFactory, ImageIcon, JButton, JFrame, JPanel}
 import javax.swing.{BorderFactory, ImageIcon, JButton, JFrame, JLabel, JPanel}
-import java.awt.{BorderLayout, Color, Dimension, GridBagConstraints, GridBagLayout, GridLayout}
 import java.awt.event.{ActionEvent, ActionListener}
 import javax.swing._
 import scala.math.abs
 import scala.util.Random
+import org.jpl7._
 
 object MainMenu {
 
@@ -72,7 +71,7 @@ object MainMenu {
 
     // Load the background image and set it as the content pane
     val backgroundImage = new ImageIcon(
-      "src/Assets/Chess/138004-chess_pieces_on_wooden_table_during_sunset-3840x2160.jpg"
+      "/home/ahmed/level2term2/paradigms/testjpl/src/main/scala/Assets/Chess/138004-chess_pieces_on_wooden_table_during_sunset-3840x2160.jpg"
     )
     val backgroundPanel = new JPanel(new BorderLayout())
     backgroundPanel.add(new JLabel(backgroundImage), BorderLayout.CENTER)
@@ -90,36 +89,36 @@ object MainMenu {
     val ticListener: ActionListener = new ActionListener {
       def actionPerformed(e: ActionEvent): Unit = {
 
-        AbstractGameEngine(TicTacToeController, TicTacToeDrawer, TicTacToeInit)
+        AbstractGameEngine(TicTacToeController, TicTacToeDrawer, TicTacToeInit, null)
 
       }
     }
 
     val connectListener: ActionListener = new ActionListener {
       def actionPerformed(e: ActionEvent): Unit = {
-        AbstractGameEngine(ConnectControler, ConnectDrawer, ConnectInit)
+        AbstractGameEngine(ConnectControler, ConnectDrawer, ConnectInit, null)
       }
     }
 
     val queensListener: ActionListener = new ActionListener {
       def actionPerformed(e: ActionEvent): Unit = {
-        AbstractGameEngine(QueensController, QueensDrawer, QueensInit)
+        AbstractGameEngine(QueensController, QueensDrawer, QueensInit, solveQueens)
       }
     }
 
     val checkersListener: ActionListener = new ActionListener {
       def actionPerformed(e: ActionEvent): Unit = {
-        AbstractGameEngine(CheckersController, CheckersDrawer, CheckersInit)
+        AbstractGameEngine(CheckersController, CheckersDrawer, CheckersInit, null)
       }
     }
     val chessListener: ActionListener = new ActionListener {
       def actionPerformed(e: ActionEvent): Unit = {
-        AbstractGameEngine(ChessController, ChessDrawer, ChessInit)
+        AbstractGameEngine(ChessController, ChessDrawer, ChessInit, null)
       }
     }
     val sudokoListener: ActionListener = new ActionListener {
       def actionPerformed(e: ActionEvent): Unit = {
-        AbstractGameEngine(SudokoController, SudokoDrawer, SudokoInit)
+        AbstractGameEngine(SudokoController, SudokoDrawer, SudokoInit, solveSuduko)
       }
     }
 
@@ -133,7 +132,7 @@ object MainMenu {
 
   def AbstractGameEngine(Controller: (Array[Int], (String, Int)) => (Boolean, Array[Int], Int),
                          Drawer: Array[Int] => Unit,
-                         Init: () => Array[Int] ): Unit = {
+                         Init: () => Array[Int] , solver: (Array[Int] => Array[Int])): Unit = {
 
 
     var turn = 0
@@ -149,12 +148,28 @@ object MainMenu {
       frame.setLocationRelativeTo(null)
 
       val panel = new JPanel()
-      panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS))
+
+
+      panel.setLayout(new FlowLayout(FlowLayout.CENTER, 50, 20))
 
       val inputField = new JTextField(20)
+      inputField.setSize(300,200)
       panel.add(inputField)
 
       val submitButton = new JButton("Submit")
+      val solveButton = new JButton("Solve")
+      solveButton.setForeground(Color.RED)
+
+
+      solveButton.addActionListener(new ActionListener() {
+        def actionPerformed(e: ActionEvent): Unit = {
+          if(solver == null)
+            println(("No solver for that game"))
+          else
+            Drawer(solver(state))
+        }
+      })
+
 
       //
       submitButton.addActionListener(new ActionListener() {
@@ -178,13 +193,114 @@ object MainMenu {
         }
       })
 
+      panel.add(solveButton)
       panel.add(submitButton)
-      frame.add(panel, BorderLayout.CENTER)
+      frame.add(panel)
       frame.setVisible(true)
     }
 
   }
 
+
+  def solveSuduko(state:Array[Int]): Array[Int] = {
+    val q1 = new Query("consult('/home/abdelrahman/Desktop/ScalaGames/src/main/scala/sudoku.pl')")
+    q1.hasSolution
+
+    for (i <- 0 until state.length) {
+      if (state(i) < 0) {
+        state(i) = -state(i)
+      }
+    }
+
+    // Using map function
+    val positiveNumbers = state.map(num => if (num < 0) -num else num)
+
+    val boardArray = positiveNumbers
+
+    def formatValue(value: Int): String = {
+      if (value == 0) "_"
+      else value.toString
+    }
+
+    def termToList(term: Term): List[List[Int]] = term.toTermArray.toList.map { rowTerm =>
+      rowTerm.toTermArray.toList.map(_.intValue())
+    }
+
+    def flattenBoard(board: List[List[Int]]): List[Int] = board.flatten
+
+    val queryBody = boardArray.sliding(9, 9).map(row => s"[${row.map(formatValue).mkString(", ")}]").mkString(",\n")
+    val query = s"YourBoard = [\n$queryBody\n],\n solve_sudoku(YourBoard, Solution)."
+    val q2 = new Query(query)
+
+    if (q2.hasSolution) {
+      println("Has solution")
+      val solutionTerm = q2.oneSolution().get("Solution").asInstanceOf[Term]
+      val solutionList = termToList(solutionTerm)
+      val flatBoard = flattenBoard(solutionList)
+      val arrayBoard = flatBoard.toArray
+
+      //      println("Sudoku Board as Array:")
+      //      arrayBoard.foreach(print)
+      //      println()
+
+      arrayBoard
+    } else {
+      println("Has no solution !")
+      state
+    }
+
+
+
+
+  }
+
+  def solveQueens(state: Array[Int]): Array[Int] = {
+    // init prolog file
+    val q = new Query("consult('src/main/scala/solveQueens.pl')")
+    q.hasSolution
+
+    // put queens from state to row arr to be sent for prolog
+    val boardArray = new Array[Int](8)
+    for (i <- 0 until 8) {
+      for (j <- 0 until 8) {
+        if (state(i * 8 + j) == 1) {
+          boardArray(j) = i + 1
+        }
+      }
+    }
+
+    // if there is a column without a queen put a variable
+    var count = 0
+    val lett = Array("A", "B", "C", "D", "E", "F", "G", "H")
+
+    def formatValue(value: Int): String = {
+      if (value == 0) {
+        count = count + 1
+        lett(count - 1)
+      }
+      else value.toString
+    }
+
+    val queryBody = boardArray.sliding(9, 9).map(row => s"[${row.map(formatValue).mkString(", ")}]").mkString(",\n")
+    // ask prolog to solve
+    val query = s"n_queens($queryBody)."
+    val q2 = new Query(query)
+    if (q2.hasSolution) {
+      count = 0
+      println("Has solution")
+      val sol = q2.oneSolution()
+      for (i <- 0 until 8) {
+        if (boardArray(i) == 0) {
+          val solutionTerm = q2.oneSolution().get(lett(count))
+          state((solutionTerm.toString.toInt - 1) * 8 + i) = 1
+          count = count + 1
+        }
+      }
+    }
+    else
+      println("no solution")
+    return state
+  }
 
   ///////////////Tic Tac Toe
 
@@ -196,11 +312,11 @@ object MainMenu {
 
   def TicTacToeDrawer(state: Array[Int]): Unit = {
     val XSymbol: Image =
-      ImageIO.read(new File("src/Assets/TicTacToe/x.png"))
+      ImageIO.read(new File("src/main/scala/Assets/TicTacToe/x.png"))
         .getScaledInstance(140, 140, Image.SCALE_SMOOTH)
 
     val OSymbol: Image =
-      ImageIO.read(new File("src/Assets/TicTacToe/o.jpeg"))
+      ImageIO.read(new File("src/main/scala/Assets/TicTacToe/o.jpeg"))
         .getScaledInstance(140, 140, Image.SCALE_SMOOTH)
 
     val frame = new JFrame("Tic Tac Toe")
@@ -330,7 +446,7 @@ object MainMenu {
     frame.setSize(800, 600)
 
     val panel = new JPanel() {
-      override def paint(gfx: Graphics) {
+      override def paint(gfx: Graphics): Unit = {
         super.paintComponent(gfx)
         connectDrawBoard(gfx, state)
 
@@ -341,7 +457,7 @@ object MainMenu {
     frame.setVisible(true)
   }
 
-  def connectDrawBoard(gfx: Graphics, state: Array[Int]) {
+  def connectDrawBoard(gfx: Graphics, state: Array[Int]): Unit = {
     val backGroundColor = new Color(51, 153, 255)
     val initCircleColor = new Color(255, 255, 255)
     val redColor = new Color(255, 0, 0)
@@ -619,7 +735,7 @@ object MainMenu {
     frame.setSize(800, 600)
 
     val panel = new JPanel() {
-      override def paint(gfx: Graphics) {
+      override def paint(gfx: Graphics): Unit = {
         super.paintComponent(gfx)
         drawBoard(gfx, state)
 
@@ -630,7 +746,7 @@ object MainMenu {
     frame.setVisible(true)
   }
 
-  def drawBoard(gfx: Graphics, state: Array[Int]) {
+  def drawBoard(gfx: Graphics, state: Array[Int]): Unit = {
     val writeColor = new Color(0, 0, 0)
     val black = new Color(128, 128, 128)
     val white = new Color(255, 255, 255)
@@ -640,11 +756,11 @@ object MainMenu {
     val font = new Font("default", Font.BOLD, 13)
     val whiteCircle: Image =
       ImageIO
-        .read(new File("src/Assets/Checkers/whiteCircle.png"))
+        .read(new File("src/main/scala/Assets/Checkers/whiteCircle.png"))
         .getScaledInstance(40, 40, Image.SCALE_SMOOTH)
     val blackCircle: Image =
       ImageIO
-        .read(new File("src/Assets/Checkers/blackCircle.png"))
+        .read(new File("src/main/scala/Assets/Checkers/blackCircle.png"))
         .getScaledInstance(40, 40, Image.SCALE_SMOOTH)
     gfx.setFont(font)
 
@@ -731,52 +847,52 @@ object MainMenu {
   def ChessDrawer(state: Array[Int]): Unit = {
 
     val blackpawn: Image =
-      ImageIO.read(new File("src/Assets/Chess/black/pawn.png"))
+      ImageIO.read(new File("src/main/scala/Assets/Chess/black/pawn.png"))
         .getScaledInstance(30, 30, Image.SCALE_SMOOTH)
 
     val whitepawn: Image =
-      ImageIO.read(new File("src/Assets/Chess/white/pawn.png"))
+      ImageIO.read(new File("src/main/scala/Assets/Chess/white/pawn.png"))
         .getScaledInstance(30, 30, Image.SCALE_SMOOTH)
 
     val blackking: Image =
-      ImageIO.read(new File("src/Assets/Chess/black/king.png"))
+      ImageIO.read(new File("src/main/scala/Assets/Chess/black/king.png"))
         .getScaledInstance(30, 30, Image.SCALE_SMOOTH)
 
     val whiteking: Image =
-      ImageIO.read(new File("src/Assets/Chess/white/king.png"))
+      ImageIO.read(new File("src/main/scala/Assets/Chess/white/king.png"))
         .getScaledInstance(30, 30, Image.SCALE_SMOOTH)
 
 
     val blackqueen: Image =
-      ImageIO.read(new File("src/Assets/Chess/black/queen.png"))
+      ImageIO.read(new File("src/main/scala/Assets/Chess/black/queen.png"))
         .getScaledInstance(30, 30, Image.SCALE_SMOOTH)
 
     val whitequeen: Image =
-      ImageIO.read(new File("src/Assets/Chess/white/queen.png"))
+      ImageIO.read(new File("src/main/scala/Assets/Chess/white/queen.png"))
         .getScaledInstance(30, 30, Image.SCALE_SMOOTH)
 
     val blackrook: Image =
-      ImageIO.read(new File("src/Assets/Chess/black/rook.png"))
+      ImageIO.read(new File("src/main/scala/Assets/Chess/black/rook.png"))
         .getScaledInstance(30, 30, Image.SCALE_SMOOTH)
 
     val whiterook: Image =
-      ImageIO.read(new File("src/Assets/Chess/white/rook.png"))
+      ImageIO.read(new File("src/main/scala/Assets/Chess/white/rook.png"))
         .getScaledInstance(30, 30, Image.SCALE_SMOOTH)
 
     val blackbishop: Image =
-      ImageIO.read(new File("src/Assets/Chess/black/bishop.png"))
+      ImageIO.read(new File("src/main/scala/Assets/Chess/black/bishop.png"))
         .getScaledInstance(30, 30, Image.SCALE_SMOOTH)
 
     val whitebishop: Image =
-      ImageIO.read(new File("src/Assets/Chess/white/bishop.png"))
+      ImageIO.read(new File("src/main/scala/Assets/Chess/white/bishop.png"))
         .getScaledInstance(30, 30, Image.SCALE_SMOOTH)
 
     val blackknight: Image =
-      ImageIO.read(new File("src/Assets/Chess/black/knight.png"))
+      ImageIO.read(new File("src/main/scala/Assets/Chess/black/knight.png"))
         .getScaledInstance(30, 30, Image.SCALE_SMOOTH)
 
     val whiteknight: Image =
-      ImageIO.read(new File("src/Assets/Chess/white/knight.png"))
+      ImageIO.read(new File("src/main/scala/Assets/Chess/white/knight.png"))
         .getScaledInstance(30, 30, Image.SCALE_SMOOTH)
 
 
@@ -1139,26 +1255,22 @@ object MainMenu {
     frame.setVisible(true)
   }
 
-
   def SudokoController(state: Array[Int], pair: (String, Int)): (Boolean, Array[Int], Int) = {
     val (input, turn) = pair
     val parts = input.split("")
     val num = parts(0).toInt
     val alpha = parts(1).charAt(0)
     var toInsert = 0
-    if(parts(2).charAt(0) == 'x'){
-       toInsert = 120;
-    }else{
+    if (parts(2).charAt(0) == 'x') {
+      toInsert = 120;
+    } else {
       toInsert = parts(2).toInt
     }
 
 
-      if((toInsert > 9 && toInsert != 120) || toInsert < 1){
-       return (false, state, turn)
+    if ((toInsert > 9 && toInsert != 120) || toInsert < 1) {
+      return (false, state, turn)
     }
-
-
-
 
 
     val columns = Array('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i')
@@ -1176,30 +1288,31 @@ object MainMenu {
 
     // check if the number is already present in the same row or column
     for (i <- 0 until 9) {
-      if (state(row * 9 + i) == toInsert || state(i * 9 + col) == toInsert) {
+      if (abs(state(row * 9 + i)) == toInsert || abs(state(i * 9 + col)) == toInsert) {
         println("Invalid Move: Number already present in the same row or column")
         return (false, state, turn)
       }
     }
+    //check if the number is already present in the same 3x3 box
+    for (i <- 0 until 3; j <- 0 until 3) {
+      val index = boxStartIndex + i * 9 + j
+      if (abs(state(index)) == toInsert) {
+        println("Invalid Move: Number already present in the same 3x3 box")
+        return (false, state, turn)
+      }
+    }
+
     val index = row * 9 + col
-    if(toInsert == 120){
-      if(state(index) < 0){
+    if (toInsert == 120) {
+      if (state(index) < 0) {
         println("Cannot delete this number")
         return (false, state, turn)
-      }else{
+      } else {
         state(index) = 0
         return (true, state, turn)
       }
     }
 
-    // check if the number is already present in the same 3x3 box
-//    for (i <- 0 until 3; j <- 0 until 3) {
-//      val index = boxStartIndex + i * 9 + j
-//      if (state(index) == toInsert) {
-//        println("Invalid Move: Number already present in the same 3x3 box")
-//        return (false, state, turn)
-//      }
-//    }
 
     state(index) = toInsert
 
@@ -1207,14 +1320,15 @@ object MainMenu {
     (true, state, turn)
   }
 
+  import scala.util.Random
 
   def generateSudoku(): Array[Int] = {
     val board = Array.fill(81)(0)
     generateSudokuHelper(board, 0)
     removeNumbers(board, 0.4)
-    for(i <- 0 until 80){
-      board(i) = board(i) * - 1
-    }// remove 50% of the numbers
+    for (i <- 0 until 80) {
+      board(i) = board(i) * -1
+    } // remove 50% of the numbers
     board
   }
 
@@ -1261,6 +1375,8 @@ object MainMenu {
   }
 
 
+
+
   //////////////Queens
 
   def QueensInit(): Array[Int] = {
@@ -1301,7 +1417,7 @@ object MainMenu {
     frame.setSize(800, 600)
 
     val panel = new JPanel() {
-      override def paint(gfx: Graphics) {
+      override def paint(gfx: Graphics): Unit = {
         super.paintComponent(gfx)
         queenDrawBoard(gfx, state)
 
@@ -1322,7 +1438,7 @@ object MainMenu {
     val font = new Font("default", Font.BOLD, 13)
     val queen: Image =
       ImageIO
-        .read(new File("src/Assets/Queen/queen.png"))
+        .read(new File("/home/abdelrahman/Desktop/ScalaGames/src/Assets/Queen/queen.png"))
         .getScaledInstance(40, 40, Image.SCALE_SMOOTH)
     gfx.setFont(font)
 
@@ -1371,10 +1487,3 @@ object MainMenu {
   }
 
 }
-
-
-
-
-
-
-
